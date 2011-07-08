@@ -70,12 +70,15 @@ public class BluetoothPbapVcardManager {
 
     private StringBuilder mVcardResults = null;
 
+    /* use 'last name, given name' */
+    private static final String DISPLAY_NAME = Contacts.DISPLAY_NAME_ALTERNATIVE;
+
     static final String[] PHONES_PROJECTION = new String[] {
             Data._ID, // 0
             CommonDataKinds.Phone.TYPE, // 1
             CommonDataKinds.Phone.LABEL, // 2
             CommonDataKinds.Phone.NUMBER, // 3
-            Contacts.DISPLAY_NAME, // 4
+            DISPLAY_NAME, // 4
     };
 
     private static final int PHONE_NUMBER_COLUMN_INDEX = 3;
@@ -84,7 +87,7 @@ public class BluetoothPbapVcardManager {
 
     static final String[] CONTACTS_PROJECTION = new String[] {
             Contacts._ID, // 0
-            Contacts.DISPLAY_NAME, // 1
+            DISPLAY_NAME, // 1
     };
 
     static final int CONTACTS_ID_COLUMN_INDEX = 0;
@@ -210,7 +213,7 @@ public class BluetoothPbapVcardManager {
             } else if (orderByWhat == BluetoothPbapObexServer.ORDER_BY_ALPHABETICAL) {
                 if (V) Log.v(TAG, "getPhonebookNameList, order by alpha");
                 contactCursor = mResolver.query(myUri, CONTACTS_PROJECTION, CLAUSE_ONLY_VISIBLE,
-                        null, Contacts.DISPLAY_NAME);
+                        null, DISPLAY_NAME);
             }
             if (contactCursor != null) {
                 for (contactCursor.moveToFirst(); !contactCursor.isAfterLast(); contactCursor
@@ -400,7 +403,7 @@ public class BluetoothPbapVcardManager {
         } else if (orderByWhat == BluetoothPbapObexServer.ORDER_BY_ALPHABETICAL) {
             try {
                 contactCursor = mResolver.query(myUri, CONTACTS_PROJECTION, CLAUSE_ONLY_VISIBLE,
-                        null, Contacts.DISPLAY_NAME);
+                        null, DISPLAY_NAME);
                 if (contactCursor != null) {
                     contactCursor.moveToPosition(offset - 1);
                     contactId = contactCursor.getLong(CONTACTS_ID_COLUMN_INDEX);
