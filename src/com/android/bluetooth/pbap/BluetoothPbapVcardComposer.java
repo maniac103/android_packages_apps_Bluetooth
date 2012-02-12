@@ -39,7 +39,7 @@ import android.telephony.PhoneNumberUtils;
 
 public class BluetoothPbapVcardComposer extends VCardComposer
 {
-	private static final String LOG_TAG = "BluetoothPbapVcardComposer";
+    private static final String LOG_TAG = "BluetoothPbapVcardComposer";
 
     public static final long FILTER_VERSION = (1L << 0); // vCard Version
     public static final long FILTER_FN = (1L << 1); // Formatted Name
@@ -90,44 +90,44 @@ public class BluetoothPbapVcardComposer extends VCardComposer
                     return numberWithControlSequence;
                 }
             };
-    
+
     public BluetoothPbapVcardComposer(final Context context, final int vcardType,
             long filter, final boolean careHandlerErrors) {
         super(context, vcardType, null, careHandlerErrors);
         mVCardType = vcardType;
         mCharset = null;
         mFilter = filter;
-        setPhoneNumberTranslationCallback(callback); // needed?
+        setPhoneNumberTranslationCallback(callback);
     }
-    
+
     public String buildVCard(final Map<String, List<ContentValues>> contentValuesListMap) {
         if (contentValuesListMap == null) {
             Log.e(LOG_TAG, "The given map is null. Ignore and return empty String");
             return "";
         } else {
-        	Log.i(LOG_TAG, "buildVCard filter = " + mFilter);
+            Log.i(LOG_TAG, "buildVCard filter = " + mFilter);
             final VCardBuilder builder = new VCardBuilder(mVCardType, mCharset);
             // not perfect here - perhaps subclass VCardBuilder to separate N and FN
             if (((mFilter & FILTER_N) != 0) || ((mFilter & FILTER_FN) != 0))
-            	builder.appendNameProperties(contentValuesListMap.get(StructuredName.CONTENT_ITEM_TYPE));
+                builder.appendNameProperties(contentValuesListMap.get(StructuredName.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_NICKNAME) != 0)
-            	builder.appendNickNames(contentValuesListMap.get(Nickname.CONTENT_ITEM_TYPE));
+                builder.appendNickNames(contentValuesListMap.get(Nickname.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_TEL) != 0)
-            	builder.appendPhones(contentValuesListMap.get(Phone.CONTENT_ITEM_TYPE), callback);
+                builder.appendPhones(contentValuesListMap.get(Phone.CONTENT_ITEM_TYPE), callback);
             if ((mFilter & FILTER_EMAIL) != 0)
-            	builder.appendEmails(contentValuesListMap.get(Email.CONTENT_ITEM_TYPE));
+                builder.appendEmails(contentValuesListMap.get(Email.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_ADR) != 0)
-            	builder.appendPostals(contentValuesListMap.get(StructuredPostal.CONTENT_ITEM_TYPE));
+                builder.appendPostals(contentValuesListMap.get(StructuredPostal.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_ORG) != 0)
-            	builder.appendOrganizations(contentValuesListMap.get(Organization.CONTENT_ITEM_TYPE));
+                builder.appendOrganizations(contentValuesListMap.get(Organization.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_URL) != 0)
-            	builder.appendWebsites(contentValuesListMap.get(Website.CONTENT_ITEM_TYPE));
+                builder.appendWebsites(contentValuesListMap.get(Website.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_PHOTO) != 0)
                 builder.appendPhotos(contentValuesListMap.get(Photo.CONTENT_ITEM_TYPE));            
             if ((mFilter & FILTER_NOTE) != 0)
-            	builder.appendNotes(contentValuesListMap.get(Note.CONTENT_ITEM_TYPE));
+                builder.appendNotes(contentValuesListMap.get(Note.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_BDAY) != 0)
-            	builder.appendEvents(contentValuesListMap.get(Event.CONTENT_ITEM_TYPE));
+                builder.appendEvents(contentValuesListMap.get(Event.CONTENT_ITEM_TYPE));
             //builder.appendIms(contentValuesListMap.get(Im.CONTENT_ITEM_TYPE));
             //builder.appendRelation(contentValuesListMap.get(Relation.CONTENT_ITEM_TYPE));
             return builder.toString();
