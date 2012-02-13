@@ -52,8 +52,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.R;
-import com.android.vcard.VCardComposer;
-import com.android.vcard.VCardConfig;
 
 import java.io.IOException;
 import java.io.OutputStream;
