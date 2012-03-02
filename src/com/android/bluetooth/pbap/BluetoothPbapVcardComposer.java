@@ -18,11 +18,13 @@ package com.android.bluetooth.pbap;
 import java.util.List;
 import java.util.Map;
 
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.pim.vcard.VCardComposer;
 import android.pim.vcard.VCardBuilder;
 import android.pim.vcard.VCardConfig;
+import android.provider.ContactsContract.Preferences;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
 import android.provider.ContactsContract.CommonDataKinds.Nickname;
@@ -33,6 +35,7 @@ import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
+import android.provider.Settings;
 import android.util.Log;
 import android.telephony.PhoneNumberUtils;
 
@@ -70,6 +73,7 @@ public class BluetoothPbapVcardComposer extends VCardComposer
     public static final long FILTER_SORT_STRING = (1L << 27); // String used for sorting operations
     public static final long FILTER_X_IRMC_CALL_DATETIME = (1L << 28); // Time stamp
 
+    private final ContentResolver mResolver;
     private final int mVCardType;
     private final String mCharset;
     private final long mFilter;
@@ -77,6 +81,7 @@ public class BluetoothPbapVcardComposer extends VCardComposer
     public BluetoothPbapVcardComposer(final Context context, final int vcardType,
             long filter, final boolean careHandlerErrors) {
         super(context, vcardType, null, careHandlerErrors);
+        mResolver = context.getContentResolver();
         mVCardType = vcardType;
         mCharset = null;
         mFilter = filter;
@@ -90,8 +95,27 @@ public class BluetoothPbapVcardComposer extends VCardComposer
             Log.i(LOG_TAG, "buildVCard filter = " + mFilter);
             final VCardBuilder builder = new VCardBuilder(mVCardType, mCharset);
             // not perfect here - perhaps subclass VCardBuilder to separate N and FN
-            if (((mFilter & FILTER_N) != 0) || ((mFilter & FILTER_FN) != 0))
-                builder.appendNameProperties(contentValuesListMap.get(StructuredName.CONTENT_ITEM_TYPE));
+            if (((mFilter & FILTER_N) != 0) || ((mFilter & FILTER_FN) != 0)) {
+                final List<ContentValues> contentValuesList =
+                        contentValuesListMap.get(StructuredName.CONTENT_ITEM_TYPE);
+                int order = Settings.System.getInt(mResolver,
+                        Preferences.DISPLAY_ORDER, Preferences.DISPLAY_ORDER_PRIMARY);
+
+                if (order == Preferences.DISPLAY_ORDER_ALTERNATIVE && contentValuesList != null) {
+                    for (ContentValues values : contentValuesList) {
+                        final String displayName =
+                                values.getAsString(StructuredName.DISPLAY_NAME);
+                        final String displayNameAlternative =
+                                values.getAsString(StructuredName.DISPLAY_NAME_ALTERNATIVE);
+                        if (displayName != null && displayNameAlternative != null) {
+                            Log.d(LOG_TAG, "Replacing display name " + displayName +
+                                    " by alternative " + displayNameAlternative);
+                            values.put(StructuredName.DISPLAY_NAME, displayNameAlternative);
+                        }
+                    }
+                }
+                builder.appendNameProperties(contentValuesList);
+            }
             if ((mFilter & FILTER_NICKNAME) != 0)
                 builder.appendNickNames(contentValuesListMap.get(Nickname.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_TEL) != 0)
@@ -112,7 +136,14 @@ public class BluetoothPbapVcardComposer extends VCardComposer
                 builder.appendEvents(contentValuesListMap.get(Event.CONTENT_ITEM_TYPE));
             //builder.appendIms(contentValuesListMap.get(Im.CONTENT_ITEM_TYPE));
             //builder.appendRelation(contentValuesListMap.get(Relation.CONTENT_ITEM_TYPE));
-            return builder.toString();
+
+            final String vcard = builder.toString();
+
+            if (BluetoothPbapService.VERBOSE) {
+                Log.v(LOG_TAG, "Built phonebook VCard: " + vcard);
+            }
+
+            return vcard;
         }
     }
 }
