@@ -463,9 +463,10 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         }
 
         public long getActualFilter() {
-            // spec says "All attributes of the vCard shall be returned
-            // if this header is not specified or carries the value 0x00000000"
-            // but that causes problems with some VW car kits!
+            // All attributes of the vCard shall be returned if this header is not
+            // specified or carries the value 0x00000000
+            if (filter == 0L)
+                return -1L;
 
             long mandatory = BluetoothPbapVcardComposer.FILTER_VERSION |
                              BluetoothPbapVcardComposer.FILTER_N |

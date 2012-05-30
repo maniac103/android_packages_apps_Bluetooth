@@ -15,9 +15,6 @@
  */
 package com.android.bluetooth.pbap;
 
-import java.util.List;
-import java.util.Map;
-
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -40,6 +37,9 @@ import android.provider.ContactsContract.CommonDataKinds.Website;
 import android.provider.Settings;
 import android.util.Log;
 import android.telephony.PhoneNumberUtils;
+
+import java.util.List;
+import java.util.Map;
 
 public class BluetoothPbapVcardComposer extends VCardComposer
 {
@@ -174,11 +174,12 @@ public class BluetoothPbapVcardComposer extends VCardComposer
             if ((mFilter & FILTER_ADR) != 0)
                 builder.appendPostals(contentValuesListMap.get(StructuredPostal.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_ORG) != 0)
-                builder.appendOrganizations(contentValuesListMap.get(Organization.CONTENT_ITEM_TYPE));
+                builder.appendOrganizations(contentValuesListMap
+                        .get(Organization.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_URL) != 0)
                 builder.appendWebsites(contentValuesListMap.get(Website.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_PHOTO) != 0)
-                builder.appendPhotos(contentValuesListMap.get(Photo.CONTENT_ITEM_TYPE));            
+                builder.appendPhotos(contentValuesListMap.get(Photo.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_NOTE) != 0)
                 builder.appendNotes(contentValuesListMap.get(Note.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_BDAY) != 0)
