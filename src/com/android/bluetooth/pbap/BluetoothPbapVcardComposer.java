@@ -144,27 +144,8 @@ public class BluetoothPbapVcardComposer extends VCardComposer
             Log.i(LOG_TAG, "buildVCard filter = " + mFilter);
             final VCardBuilder builder = new PbapVcardBuilder(mVCardType, mCharset);
             // not perfect here - perhaps subclass VCardBuilder to separate N and FN
-            if (((mFilter & FILTER_N) != 0) || ((mFilter & FILTER_FN) != 0)) {
-                final List<ContentValues> contentValuesList =
-                        contentValuesListMap.get(StructuredName.CONTENT_ITEM_TYPE);
-                int order = Settings.System.getInt(mResolver,
-                        Preferences.DISPLAY_ORDER, Preferences.DISPLAY_ORDER_PRIMARY);
-
-                if (order == Preferences.DISPLAY_ORDER_ALTERNATIVE && contentValuesList != null) {
-                    for (ContentValues values : contentValuesList) {
-                        final String displayName =
-                                values.getAsString(StructuredName.DISPLAY_NAME);
-                        final String displayNameAlternative =
-                                values.getAsString(StructuredName.DISPLAY_NAME_ALTERNATIVE);
-                        if (displayName != null && displayNameAlternative != null) {
-                            Log.d(LOG_TAG, "Replacing display name " + displayName +
-                                    " by alternative " + displayNameAlternative);
-                            values.put(StructuredName.DISPLAY_NAME, displayNameAlternative);
-                        }
-                    }
-                }
-                builder.appendNameProperties(contentValuesList);
-            }
+            if (((mFilter & FILTER_N) != 0) || ((mFilter & FILTER_FN) != 0))
+                builder.appendNameProperties(contentValuesListMap.get(StructuredName.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_NICKNAME) != 0)
                 builder.appendNickNames(contentValuesListMap.get(Nickname.CONTENT_ITEM_TYPE));
             if ((mFilter & FILTER_TEL) != 0)
