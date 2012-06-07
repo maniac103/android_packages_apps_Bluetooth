@@ -194,8 +194,7 @@ public class BluetoothPbapCallLogComposer {
         }
         if (CallerInfo.UNKNOWN_NUMBER.equals(name) || CallerInfo.PRIVATE_NUMBER.equals(name) ||
                 CallerInfo.PAYPHONE_NUMBER.equals(name)) {
-            // setting name to "" as FN/N must be empty fields in this case.
-            name = "";
+            name = mContext.getString(R.string.unknownNumber);
         }
         final boolean needCharset = !(VCardUtils.containsOnlyPrintableAscii(name));
         builder.appendLine(VCardConstants.PROPERTY_FN, name, needCharset, false);
