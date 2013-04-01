@@ -640,59 +640,59 @@ public class BluetoothMns {
 
             mContext.unregisterReceiver(mStorageStatusReceiver);
 
-            crSmsA.close();
-            crSmsB.close();
+            if (crSmsA != null) crSmsA.close();
+            if (crSmsB != null) crSmsB.close();
             currentCRSms = CR_SMS_A;
-            crSmsInboxA.close();
-            crSmsInboxB.close();
+            if (crSmsInboxA != null) crSmsInboxA.close();
+            if (crSmsInboxB != null) crSmsInboxB.close();
             currentCRSmsInbox = CR_SMS_INBOX_A;
-            crSmsSentA.close();
-            crSmsSentB.close();
+            if (crSmsSentA != null) crSmsSentA.close();
+            if (crSmsSentB != null) crSmsSentB.close();
             currentCRSmsSent = CR_SMS_SENT_A;
-            crSmsDraftA.close();
-            crSmsDraftB.close();
+            if (crSmsDraftA != null) crSmsDraftA.close();
+            if (crSmsDraftB != null) crSmsDraftB.close();
             currentCRSmsDraft = CR_SMS_DRAFT_A;
-            crSmsOutboxA.close();
-            crSmsOutboxB.close();
+            if (crSmsOutboxA != null) crSmsOutboxA.close();
+            if (crSmsOutboxB != null) crSmsOutboxB.close();
             currentCRSmsOutbox = CR_SMS_OUTBOX_A;
-            crSmsFailedA.close();
-            crSmsFailedB.close();
+            if (crSmsFailedA != null) crSmsFailedA.close();
+            if (crSmsFailedB != null) crSmsFailedB.close();
             currentCRSmsFailed = CR_SMS_FAILED_A;
-            crSmsQueuedA.close();
-            crSmsQueuedB.close();
+            if (crSmsQueuedA != null) crSmsQueuedA.close();
+            if (crSmsQueuedB != null) crSmsQueuedB.close();
             currentCRSmsQueued = CR_SMS_QUEUED_A;
 
-            crMmsA.close();
-            crMmsB.close();
+            if (crMmsA != null) crMmsA.close();
+            if (crMmsB != null) crMmsB.close();
             currentCRMms = CR_MMS_A;
-            crMmsOutboxA.close();
-            crMmsOutboxB.close();
+            if (crMmsOutboxA != null) crMmsOutboxA.close();
+            if (crMmsOutboxB != null) crMmsOutboxB.close();
             currentCRMmsOutbox = CR_MMS_OUTBOX_A;
-            crMmsDraftA.close();
-            crMmsDraftB.close();
+            if (crMmsDraftA != null) crMmsDraftA.close();
+            if (crMmsDraftB != null) crMmsDraftB.close();
             currentCRMmsDraft = CR_MMS_DRAFT_A;
-            crMmsInboxA.close();
-            crMmsInboxB.close();
+            if (crMmsInboxA != null) crMmsInboxA.close();
+            if (crMmsInboxB != null) crMmsInboxB.close();
             currentCRMmsInbox = CR_MMS_INBOX_A;
-            crMmsSentA.close();
-            crMmsSentB.close();
+            if (crMmsSentA != null) crMmsSentA.close();
+            if (crMmsSentB != null) crMmsSentB.close();
             currentCRMmsSent = CR_MMS_SENT_A;
 
             //email start
-            crEmailA.close();
-            crEmailB.close();
+            if (crEmailA != null) crEmailA.close();
+            if (crEmailB != null) crEmailB.close();
             currentCREmail = CR_EMAIL_A;
-            crEmailOutboxA.close();
-            crEmailOutboxB.close();
+            if (crEmailOutboxA != null) crEmailOutboxA.close();
+            if (crEmailOutboxB != null) crEmailOutboxB.close();
             currentCREmailOutbox = CR_EMAIL_OUTBOX_A;
-            crEmailDraftA.close();
-            crEmailDraftB.close();
+            if (crEmailDraftA != null) crEmailDraftA.close();
+            if (crEmailDraftB != null) crEmailDraftB.close();
             currentCREmailDraft = CR_EMAIL_DRAFT_A;
-            crEmailInboxA.close();
-            crEmailInboxB.close();
+            if (crEmailInboxA != null) crEmailInboxA.close();
+            if (crEmailInboxB != null) crEmailInboxB.close();
             currentCREmailInbox = CR_EMAIL_INBOX_A;
-            crEmailSentA.close();
-            crEmailSentB.close();
+            if (crEmailSentA != null) crEmailSentA.close();
+            if (crEmailSentB != null) crEmailSentB.close();
             currentCREmailSent = CR_EMAIL_SENT_A;
             //email end
 
@@ -869,13 +869,17 @@ public class BluetoothMns {
      * given id
      */
     private int getMessageType(String id) {
+        int result = -1;
         Cursor cr = mContext.getContentResolver().query(
                 Uri.parse("content://sms/" + id),
                 new String[] { "_id", "type" }, null, null, null);
-        if (cr.moveToFirst()) {
-            return cr.getInt(cr.getColumnIndex("type"));
+        if (cr != null) {
+            if (cr.moveToFirst()) {
+                result = cr.getInt(cr.getColumnIndex("type"));
+            }
+            cr.close();
         }
-        return -1;
+        return result;
     }
     /**
      * Gets the table type (as in Email Content Provider) for the
@@ -887,16 +891,22 @@ public class BluetoothMns {
                 Uri.parse("content://com.android.email.provider/message/" + id),
                 new String[] { "_id", "mailboxKey" }, null, null, null);
         int folderId = -1;
-        if (cr.moveToFirst()) {
+        if (cr != null) {
+            if (cr.moveToFirst()) {
                 folderId = cr.getInt(cr.getColumnIndex("mailboxKey"));
+            }
+            cr.close();
         }
 
         Cursor cr1 = mContext.getContentResolver().query(
                 Uri.parse("content://com.android.email.provider/mailbox"),
                 new String[] { "_id", "displayName" }, "_id ="+ folderId, null, null);
         String folderName = null;
-        if (cr1.moveToFirst()) {
+        if (cr1 != null) {
+            if (cr1.moveToFirst()) {
                 folderName = cr1.getString(cr1.getColumnIndex("displayName"));
+            }
+            cr1.close();
         }
         if(folderName !=null && (folderName.equalsIgnoreCase("Trash") ||
                         folderName.toUpperCase().contains("TRASH"))){
@@ -915,8 +925,11 @@ public class BluetoothMns {
                 Uri.parse("content://sms/"),
                 new String[] { "_id", "date", "type" }, " _id = " + id, null,
                 null);
-        if (cr.moveToFirst()) {
-            return getFolder(cr.getInt(cr.getColumnIndex("type")));
+        if (cr != null) {
+            if (cr.moveToFirst()) {
+                newFolder = getFolder(cr.getInt(cr.getColumnIndex("type")));
+            }
+            cr.close();
         }
         return newFolder;
     }
@@ -951,6 +964,10 @@ public class BluetoothMns {
 
             int currentItemCount = 0;
             int newItemCount = 0;
+
+            if (crEmailInboxA == null || crEmailInboxB == null) {
+                return;
+            }
 
             if (currentCREmailInbox == CR_EMAIL_INBOX_A) {
                 currentItemCount = crEmailInboxA.getCount();
@@ -1062,6 +1079,10 @@ public class BluetoothMns {
             int currentItemCount = 0;
             int newItemCount = 0;
 
+            if (crEmailSentA == null || crEmailSentB == null) {
+                return;
+            }
+
             if (currentCREmailSent == CR_EMAIL_SENT_A) {
                 currentItemCount = crEmailSentA.getCount();
                 crEmailSentB.requery();
@@ -1169,6 +1190,10 @@ public class BluetoothMns {
             int currentItemCount = 0;
             int newItemCount = 0;
 
+            if (crEmailDraftA == null || crEmailDraftB == null) {
+                return;
+            }
+
             if (currentCREmailDraft == CR_EMAIL_DRAFT_A) {
                 currentItemCount = crEmailDraftA.getCount();
                 crEmailDraftB.requery();
@@ -1220,10 +1245,12 @@ public class BluetoothMns {
                                 cr1 = mContext.getContentResolver().query(uri1, null, whereClause, null,
                                         null);
 
-                                if (cr1.getCount() > 0) {
-                                    cr1.moveToFirst();
-                                    folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
-                                    containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                if (cr1 != null) {
+                                    if (cr1.moveToFirst()) {
+                                        folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
+                                        containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                    }
+                                    cr1.close();
                                 }
 
                                 String newFolder = containingFolder;
@@ -1269,10 +1296,12 @@ public class BluetoothMns {
                                 cr1 = mContext.getContentResolver().query(uri1, null, whereClause, null,
                                         null);
 
-                                if (cr1.getCount() > 0) {
-                                    cr1.moveToFirst();
-                                    folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
-                                    containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                if (cr1 != null) {
+                                    if (cr1.moveToFirst()) {
+                                        folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
+                                        containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                    }
+                                    cr1.close();
                                 }
 
                                 String newFolder = containingFolder;
@@ -1325,6 +1354,10 @@ public class BluetoothMns {
             int currentItemCount = 0;
             int newItemCount = 0;
 
+            if (crEmailOutboxA == null || crEmailOutboxB == null) {
+                return;
+            }
+
             if (currentCREmailOutbox == CR_EMAIL_OUTBOX_A) {
                 currentItemCount = crEmailOutboxA.getCount();
                 crEmailOutboxB.requery();
@@ -1375,10 +1408,12 @@ public class BluetoothMns {
                                 cr1 = mContext.getContentResolver().query(uri1, null, whereClause, null,
                                         null);
 
-                                if (cr1.getCount() > 0) {
-                                    cr1.moveToFirst();
-                                    folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
-                                    containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                if (cr1 != null) {
+                                    if (cr1.moveToFirst()) {
+                                        folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
+                                        containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                    }
+                                    cr1.close();
                                 }
 
                                 String newFolder = containingFolder;
@@ -1431,10 +1466,12 @@ public class BluetoothMns {
                                 cr1 = mContext.getContentResolver().query(uri1, null, whereClause, null,
                                         null);
 
-                                if (cr1.getCount() > 0) {
-                                    cr1.moveToFirst();
-                                    folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
-                                    containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                if (cr1 != null) {
+                                    if (cr1.moveToFirst()) {
+                                        folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
+                                        containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                    }
+                                    cr1.close();
                                 }
 
                                 String newFolder = containingFolder;
@@ -1492,6 +1529,10 @@ public class BluetoothMns {
             int newItemCount = 0;
 
             checkMmsAdded();
+
+            if (crSmsA == null || crSmsB == null) {
+                return;
+            }
 
             // Synchronize this?
             if (currentCRSms == CR_SMS_A) {
@@ -1602,6 +1643,10 @@ public class BluetoothMns {
             EmailUtils eu = new EmailUtils();
             String containingFolder = null;
 
+            if (crEmailA == null || crEmailB == null) {
+                return;
+            }
+
             // Synchronize this?
             if (currentCREmail == CR_EMAIL_A) {
                 currentItemCount = crEmailA.getCount();
@@ -1645,18 +1690,12 @@ public class BluetoothMns {
                             String whereClause = " _id = " + id1;
                             cr1 = mContext.getContentResolver().query(uri1, null, whereClause, null,
                                     null);
-                            if ( cr1.moveToFirst()) {
-                                        do {
-                                                for(int i=0;i<cr1.getColumnCount();i++){
-                                                        Log.d(TAG, " Column Name: "+ cr1.getColumnName(i) + " Value: " + cr1.getString(i));
-                                                }
-                                    } while ( cr1.moveToNext());
+                            if (cr1 != null) {
+                                if (cr1.moveToFirst()) {
+                                    folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
+                                    containingFolder = eu.getContainingFolderEmail(folderId, mContext);
                                 }
-
-                            if (cr1.getCount() > 0) {
-                                cr1.moveToFirst();
-                                folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
-                                containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                cr1.close();
                             }
 
                             if ( containingFolder != null ) {
@@ -1689,19 +1728,12 @@ public class BluetoothMns {
                             cr1 = mContext.getContentResolver().query(uri1, null, whereClause, null,
                                     null);
 
-                            if ( cr1.moveToFirst()) {
-                                do {
-                                    for(int i=0;i<cr1.getColumnCount();i++){
-                                        Log.d(TAG, " Column Name: "+ cr1.getColumnName(i) +
-                                                " Value: " + cr1.getString(i));
-                                    }
-                                } while ( cr1.moveToNext());
-                            }
-
-                            if (cr1.getCount() > 0) {
-                                cr1.moveToFirst();
-                                folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
-                                containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                            if (cr1 != null) {
+                                if (cr1.moveToFirst()) {
+                                    folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
+                                    containingFolder = eu.getContainingFolderEmail(folderId, mContext);
+                                }
+                                cr1.close();
                             }
                             if ( containingFolder != null ) {
                                 Log.d(TAG, " containingFolder:: "+containingFolder);
@@ -1748,6 +1780,10 @@ public class BluetoothMns {
             int newItemCount = 0;
 
             checkMmsInbox();
+
+            if (crSmsInboxA == null || crSmsInboxB == null) {
+                return;
+            }
 
             if (currentCRSmsInbox == CR_SMS_INBOX_A) {
                 currentItemCount = crSmsInboxA.getCount();
@@ -1859,6 +1895,10 @@ public class BluetoothMns {
             int newItemCount = 0;
 
             checkMmsSent();
+
+            if (crSmsSentA == null || crSmsSentB == null) {
+                return;
+            }
 
             if (currentCRSmsSent == CR_SMS_SENT_A) {
                 currentItemCount = crSmsSentA.getCount();
@@ -1972,6 +2012,10 @@ public class BluetoothMns {
             int newItemCount = 0;
 
             checkMmsDrafts();
+
+            if (crSmsDraftA == null || crSmsDraftB == null) {
+                return;
+            }
 
             if (currentCRSmsDraft == CR_SMS_DRAFT_A) {
                 currentItemCount = crSmsDraftA.getCount();
@@ -2102,6 +2146,10 @@ public class BluetoothMns {
             checkMmsOutbox();
 
             // Check SMS Outbox for changes
+
+            if (crSmsOutboxA == null || crSmsOutboxB == null) {
+                return;
+            }
 
             if (currentCRSmsOutbox == CR_SMS_OUTBOX_A) {
                 currentItemCount = crSmsOutboxA.getCount();
@@ -2242,6 +2290,10 @@ public class BluetoothMns {
 
             // Mms doesn't have Failed type
 
+            if (crSmsFailedA == null || crSmsFailedB == null) {
+                return;
+            }
+
             if (currentCRSmsFailed == CR_SMS_FAILED_A) {
                 currentItemCount = crSmsFailedA.getCount();
                 crSmsFailedB.requery();
@@ -2377,6 +2429,10 @@ public class BluetoothMns {
             int newItemCount = 0;
 
             // Mms doesn't have Queued type
+
+            if (crSmsQueuedA == null || crSmsQueuedB == null) {
+                return;
+            }
 
             if (currentCRSmsQueued == CR_SMS_QUEUED_A) {
                 currentItemCount = crSmsQueuedA.getCount();
@@ -2893,6 +2949,10 @@ public class BluetoothMns {
         int currentItemCount = 0;
         int newItemCount = 0;
 
+        if (crMmsOutboxA == null || crMmsOutboxB == null) {
+            return;
+        }
+
         if (currentCRMmsOutbox == CR_MMS_OUTBOX_A) {
             currentItemCount = crMmsOutboxA.getCount();
             crMmsOutboxB.requery();
@@ -3037,6 +3097,10 @@ public class BluetoothMns {
         int currentItemCount = 0;
         int newItemCount = 0;
 
+        if (crMmsDraftA == null || crMmsDraftB == null) {
+            return;
+        }
+
         if (currentCRMmsDraft == CR_MMS_OUTBOX_A) {
             currentItemCount = crMmsDraftA.getCount();
             crMmsDraftA.requery();
@@ -3172,6 +3236,10 @@ public class BluetoothMns {
         int currentItemCount = 0;
         int newItemCount = 0;
 
+        if (crMmsInboxA == null || crMmsInboxB == null) {
+            return;
+        }
+
         if (currentCRMmsInbox == CR_MMS_INBOX_A) {
             currentItemCount = crMmsInboxA.getCount();
             crMmsInboxB.requery();
@@ -3270,6 +3338,10 @@ public class BluetoothMns {
 
         int currentItemCount = 0;
         int newItemCount = 0;
+
+        if (crMmsSentA == null || crMmsSentB == null) {
+            return;
+        }
 
         if (currentCRMmsSent == CR_MMS_SENT_A) {
             currentItemCount = crMmsSentA.getCount();
@@ -3371,6 +3443,10 @@ public class BluetoothMns {
         int currentItemCount = 0;
         int newItemCount = 0;
 
+        if (crMmsA == null || crMmsB == null) {
+            return;
+        }
+
         if (currentCRMms == CR_MMS_A) {
             currentItemCount = crMmsA.getCount();
             crMmsB.requery();
@@ -3469,12 +3545,13 @@ public class BluetoothMns {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = mContext.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int msgboxInd = cursor.getColumnIndex("msg_box");
-            folderNum = cursor.getInt(msgboxInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int msgboxInd = cursor.getColumnIndex("msg_box");
+                folderNum = cursor.getInt(msgboxInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return folderNum;
     }
 

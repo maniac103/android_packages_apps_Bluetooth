@@ -436,32 +436,31 @@ public class BluetoothMasAppIf {
                 new String[] { PhoneLookup._ID, PhoneLookup.LOOKUP_KEY,
                         PhoneLookup.DISPLAY_NAME }, null, null, null);
 
-        cursorContacts.moveToFirst();
+        if (cursorContacts != null) {
+            if (cursorContacts.moveToFirst()) {
+                long contactId = cursorContacts.getLong(PHONELOOKUP_ID_COLUMN_INDEX);
+                String lookupKey = cursorContacts.getString(PHONELOOKUP_LOOKUP_KEY_COLUMN_INDEX);
 
-        if (cursorContacts.getCount() > 0) {
-            long contactId = cursorContacts
-            .getLong(PHONELOOKUP_ID_COLUMN_INDEX);
-            String lookupKey = cursorContacts
-            .getString(PHONELOOKUP_LOOKUP_KEY_COLUMN_INDEX);
+                Uri lookUpUri = Contacts.getLookupUri(contactId, lookupKey);
+                String Id = lookUpUri.getLastPathSegment();
 
-            Uri lookUpUri = Contacts.getLookupUri(contactId, lookupKey);
-            String Id = lookUpUri.getLastPathSegment();
+                vCard.name = cursorContacts.getString(PHONELOOKUP_DISPLAY_NAME_COLUMN_INDEX);
+                vCard.email = "";
 
-            Cursor crEm = context.getContentResolver().query(Email.CONTENT_URI,
-                    new String[] { Email.DATA }, Email.CONTACT_ID + "=?",
-                    new String[] { Id }, null);
-            crEm.moveToFirst();
+                Cursor crEm = context.getContentResolver().query(Email.CONTENT_URI,
+                        new String[] { Email.DATA }, Email.CONTACT_ID + "=?",
+                        new String[] { Id }, null);
 
-            vCard.name = cursorContacts
-            .getString(PHONELOOKUP_DISPLAY_NAME_COLUMN_INDEX);
-
-            vCard.email = "";
-            if (crEm.moveToFirst()) {
-                do {
-                    vCard.email += crEm.getString(EMAIL_DATA_COLUMN_INDEX)
-                    + ";";
-                } while (crEm.moveToNext());
+                if (crEm != null) {
+                    crEm.moveToFirst();
+                    while (!crEm.isAfterLast()) {
+                        vCard.email += crEm.getString(EMAIL_DATA_COLUMN_INDEX) + ";";
+                        crEm.moveToNext();
+                    }
+                    crEm.close();
+                }
             }
+            cursorContacts.close();
         }
         return vCard;
     }
@@ -707,24 +706,18 @@ public class BluetoothMasAppIf {
                         Cursor cursor = cr.query(uri, null, whereClause, null,
                         "date desc");
 
-                        int idInd = cursor.getColumnIndex("_id");
-                        int addressInd = cursor.getColumnIndex("address");
-                        int personInd = cursor.getColumnIndex("person");
-                        int dateInd = cursor.getColumnIndex("date");
-                        int readInd = cursor.getColumnIndex("read");
-                        int statusInd = cursor.getColumnIndex("status");
-                        int subjectInd = cursor.getColumnIndex("subject");
-                        int typeInd = cursor.getColumnIndex("type");
-                        int bodyInd = cursor.getColumnIndex("body");
-
-                        Log.d(TAG, "move to First" + cursor.moveToFirst());
-                        Log.d(TAG,
-                                "move to Liststartoffset"
-                                + cursor.moveToPosition(appParams.ListStartOffset));
-
                         this.list = new ArrayList<VcardContent>();
 
-                        if (cursor.moveToFirst()) {
+                        if (cursor != null && cursor.moveToFirst()) {
+                            int idInd = cursor.getColumnIndex("_id");
+                            int addressInd = cursor.getColumnIndex("address");
+                            int personInd = cursor.getColumnIndex("person");
+                            int dateInd = cursor.getColumnIndex("date");
+                            int readInd = cursor.getColumnIndex("read");
+                            int statusInd = cursor.getColumnIndex("status");
+                            int subjectInd = cursor.getColumnIndex("subject");
+                            int typeInd = cursor.getColumnIndex("type");
+                            int bodyInd = cursor.getColumnIndex("body");
 
                             do {
                                 /*
@@ -949,7 +942,8 @@ public class BluetoothMasAppIf {
                                 msgList.add(ml);
                                 writeCount++;
                             } while (cursor.moveToNext());
-
+                        }
+                        if (cursor != null) {
                             cursor.close();
                         }
                     }
@@ -1025,20 +1019,14 @@ public class BluetoothMasAppIf {
                         Log.d(TAG, "## whereClauseEmail ##:" + whereClauseEmail);
                         Cursor cursor = crEmail.query(uriEmail, null, whereClauseEmail, null, "timeStamp desc");
 
-                        int idInd = cursor.getColumnIndex("_id");
-                        int fromIndex = cursor.getColumnIndex("fromList");
-                        int toIndex = cursor.getColumnIndex("toList");
-                        int dateInd = cursor.getColumnIndex("timeStamp");
-                        int readInd = cursor.getColumnIndex("flagRead");
-                        int subjectInd = cursor.getColumnIndex("subject");
-                        int replyToInd = cursor.getColumnIndex("replyToList");
-
-                        Log.d(TAG, "move to First" + cursor.moveToFirst());
-                        Log.d(TAG, "move to Liststartoffset"
-                                + cursor.moveToPosition(appParams.ListStartOffset));
-
-
-                        if (cursor.moveToFirst()) {
+                        if (cursor != null && cursor.moveToFirst()) {
+                            int idInd = cursor.getColumnIndex("_id");
+                            int fromIndex = cursor.getColumnIndex("fromList");
+                            int toIndex = cursor.getColumnIndex("toList");
+                            int dateInd = cursor.getColumnIndex("timeStamp");
+                            int readInd = cursor.getColumnIndex("flagRead");
+                            int subjectInd = cursor.getColumnIndex("subject");
+                            int replyToInd = cursor.getColumnIndex("replyToList");
 
                             do {
                                 /*
@@ -1084,7 +1072,8 @@ public class BluetoothMasAppIf {
                                 msgList.add(emailMsg);
                                 writeCount++;
                             } while (cursor.moveToNext());
-
+                        }
+                        if (cursor != null) {
                             cursor.close();
                         }
                     }//end email Messages if
@@ -1218,16 +1207,19 @@ public class BluetoothMasAppIf {
      */
     private String getContainingFolder(String msgHandle) {
         Cursor cr;
+        String folder = null;
 
         cr = context.getContentResolver().query(
                 Uri.parse("content://sms/" + msgHandle),
                 new String[] { "_id", "type", "thread_id" }, null, null, null);
-        if (cr.getCount() > 0) {
-            cr.moveToFirst();
-            return getMAPFolder(cr.getString(cr.getColumnIndex("type")),
-                    cr.getString(cr.getColumnIndex("thread_id")));
+        if (cr != null) {
+            if (cr.moveToFirst()) {
+                folder = getMAPFolder(cr.getString(cr.getColumnIndex("type")),
+                        cr.getString(cr.getColumnIndex("thread_id")));
+            }
+            cr.close();
         }
-        return null;
+        return folder;
     }
 
     /**
@@ -1384,8 +1376,7 @@ public class BluetoothMasAppIf {
             return rsp;
         }
 
-        if (cr.getCount() > 0) {
-            cr.moveToFirst();
+        if (cr != null && cr.moveToFirst()) {
             String containingFolder = getContainingFolder(msgHandle);
             BmessageConsts bmsg = new BmessageConsts();
 
@@ -1543,6 +1534,9 @@ public class BluetoothMasAppIf {
                 }
             }
         }
+        if (cr != null) {
+            cr.close();
+        }
 
         return rsp;
     }
@@ -1556,18 +1550,20 @@ public class BluetoothMasAppIf {
      * Retrieve the conversation thread id
      */
     private int getThreadId(String address) {
-
+        int threadId = 0;
         Cursor cr = context.getContentResolver().query(
                 Uri.parse("content://sms/"), null,
                 "address = '" + address + "'", null, null);
-        if (cr.moveToFirst()) {
-            int threadId = Integer.valueOf(cr.getString(cr
-                    .getColumnIndex("thread_id")));
-            Log.d(TAG, " Found the entry, thread id = " + threadId);
-
-            return (threadId);
+        if (cr != null) {
+            if (cr.moveToFirst()) {
+                threadId = Integer.valueOf(cr.getString(cr
+                        .getColumnIndex("thread_id")));
+                Log.d(TAG, " Found the entry, thread id = " + threadId);
+            }
+            cr.close();
         }
-        return 0;
+
+        return threadId;
     }
 
     /**
@@ -1618,7 +1614,7 @@ public class BluetoothMasAppIf {
         //TODO need to insert a row in the body table and update the mailbox table with the no of messages unread
         Cursor cr;
         int folderId = 0;
-        int accountId = 0;
+        long accountId = 0;
         Time timeObj = new Time();
         timeObj.setToNow();
 
@@ -1626,23 +1622,14 @@ public class BluetoothMasAppIf {
         cr = context.getContentResolver().query(
                 Uri.parse("content://com.android.email.provider/mailbox"),
                 null, whereClause, null, null);
-        if (cr.getCount() > 0) {
-            cr.moveToFirst();
-            folderId = cr.getInt(cr.getColumnIndex("_id"));
+        if (cr != null) {
+            if (cr.moveToFirst()) {
+                folderId = cr.getInt(cr.getColumnIndex("_id"));
+            }
+            cr.close();
         }
 
-
-
-        Cursor cr1;
-        String whereClause1 = "UPPER(emailAddress) LIKE  '"+OrigEmail.toUpperCase().trim()+"'";
-        cr1 = context.getContentResolver().query(
-                Uri.parse("content://com.android.email.provider/account"),
-                null, whereClause1, null, null);
-        if (cr1.getCount() > 0) {
-            cr1.moveToFirst();
-            accountId = cr1.getInt(cr1.getColumnIndex("_id"));
-        }
-
+        accountId = getEmailAccountId(OrigEmail);
 
 
         Log.d(TAG, "-------------");
@@ -1702,9 +1689,11 @@ public class BluetoothMasAppIf {
         cr1 = context.getContentResolver().query(
                 Uri.parse("content://com.android.email.provider/account"),
                 null, whereClause1, null, null);
-        if (cr1.getCount() > 0) {
-            cr1.moveToFirst();
-            accountId = cr1.getInt(cr1.getColumnIndex("_id"));
+        if (cr1 != null) {
+            if (cr1.moveToFirst()) {
+                accountId = cr1.getInt(cr1.getColumnIndex("_id"));
+            }
+            cr1.close();
         }
         return accountId;
     }
@@ -2011,16 +2000,18 @@ public class BluetoothMasAppIf {
 
     private void deleteMMS(String msgHandle){
         Cursor cr = context.getContentResolver().query(Uri.parse("content://mms/" + msgHandle), null, null, null, null);
-        if ( cr.moveToFirst()){
-            int threadId = cr.getInt(cr.getColumnIndex(("thread_id")));
-            if ( threadId != DELETED_THREAD_ID){
-                // Move to deleted folder
-                updateMMSThreadId(msgHandle, Integer.valueOf(DELETED_THREAD_ID));
-            } else {
-                // Delete the message permanently
-                int msgId = Integer.valueOf(msgHandle) + MMS_HDLR_CONSTANT;
-                mnsClient.addMceInitiatedOperation(Integer.toString(msgId));
-                context.getContentResolver().delete(Uri.parse("content://mms/" + msgHandle), null, null);
+        if (cr != null) {
+            if ( cr.moveToFirst()){
+                int threadId = cr.getInt(cr.getColumnIndex(("thread_id")));
+                if ( threadId != DELETED_THREAD_ID){
+                    // Move to deleted folder
+                    updateMMSThreadId(msgHandle, Integer.valueOf(DELETED_THREAD_ID));
+                } else {
+                    // Delete the message permanently
+                    int msgId = Integer.valueOf(msgHandle) + MMS_HDLR_CONSTANT;
+                    mnsClient.addMceInitiatedOperation(Integer.toString(msgId));
+                    context.getContentResolver().delete(Uri.parse("content://mms/" + msgHandle), null, null);
+                }
             }
             cr.close();
         }
@@ -2030,12 +2021,13 @@ public class BluetoothMasAppIf {
 
         Cursor cr = context.getContentResolver().query(Uri.parse("content://mms/" + msgHandle), null, null, null, null );
 
-        if (cr.moveToFirst()){
+        if (cr != null && cr.moveToFirst()) {
 
             // Make sure that the message is in delete folder
             String currentThreadId = cr.getString(cr.getColumnIndex("thread_id"));
             if ( currentThreadId != null && Integer.valueOf(currentThreadId) != -1){
                 Log.d(TAG, " Not in delete folder");
+                cr.close();
                 return;
             }
 
@@ -2045,45 +2037,51 @@ public class BluetoothMasAppIf {
 
             // Search the database for the given message ID
             Cursor crThreadId = context.getContentResolver().query(Uri.parse("content://mms/"), null,"_id = " + msgHandle + " AND thread_id != -1", null, null);
-            if (crThreadId.moveToFirst()) {
-                // A thread for the given message ID exists in the database
-                String threadIdStr = crThreadId.getString(crThreadId.getColumnIndex("thread_id"));
-                Log.d(TAG, " THREAD ID " + threadIdStr);
-                updateMMSThreadId(msgHandle, Integer.valueOf(threadIdStr));
-            }
-            else
-            {
-                /* No thread for the given address
-                 * Create a fake message to obtain the thread, use that thread_id
-                 * and then delete the fake message
-                 */
-                ContentValues tempValue = new ContentValues();
-                tempValue.put("address", address);
-                tempValue.put("type", "20");
-                Uri tempUri = context.getContentResolver().insert( Uri.parse("content://sms/"), tempValue);
-
-                if ( tempUri != null ) {
-                    String tempMsgId = tempUri.getLastPathSegment();
-                    Cursor tempCr = context.getContentResolver().query(tempUri, null, null, null, null);
-                    tempCr.moveToFirst();
-                    String newThreadIdStr = tempCr.getString(tempCr.getColumnIndex("thread_id"));
-                    tempCr.close();
-
-                    updateMMSThreadId(msgHandle, Integer.valueOf(newThreadIdStr));
-
-                    context.getContentResolver().delete(tempUri, null, null);
+            if (crThreadId != null) {
+                if (crThreadId.moveToFirst()) {
+                    // A thread for the given message ID exists in the database
+                    String threadIdStr = crThreadId.getString(crThreadId.getColumnIndex("thread_id"));
+                    Log.d(TAG, " THREAD ID " + threadIdStr);
+                    updateMMSThreadId(msgHandle, Integer.valueOf(threadIdStr));
                 }
-                else {
-                    Log.d(TAG, "Error in undelete");
+                else
+                {
+                    /* No thread for the given address
+                     * Create a fake message to obtain the thread, use that thread_id
+                     * and then delete the fake message
+                     */
+                    ContentValues tempValue = new ContentValues();
+                    tempValue.put("address", address);
+                    tempValue.put("type", "20");
+                    Uri tempUri = context.getContentResolver().insert( Uri.parse("content://sms/"), tempValue);
+
+                    if ( tempUri != null ) {
+                        String tempMsgId = tempUri.getLastPathSegment();
+                        Cursor tempCr = context.getContentResolver().query(tempUri, null, null, null, null);
+                        if (tempCr != null) {
+                            if (tempCr.moveToFirst()) {
+                                String newThreadIdStr = tempCr.getString(tempCr.getColumnIndex("thread_id"));
+                                updateMMSThreadId(msgHandle, Integer.valueOf(newThreadIdStr));
+                            }
+                            tempCr.close();
+                        }
+
+                        context.getContentResolver().delete(tempUri, null, null);
+                    }
+                    else {
+                        Log.d(TAG, "Error in undelete");
+                    }
                 }
+                crThreadId.close();
             }
-            crThreadId.close();
         }
         else
         {
             Log.d(TAG, "msgHandle not found");
         }
-        cr.close();
+        if (cr != null) {
+            cr.close();
+        }
     }
 
     private void updateSMSThreadId(String msgHandle, int threadId){
@@ -2094,15 +2092,17 @@ public class BluetoothMasAppIf {
 
     private void deleteSMS(String msgHandle){
         Cursor cr = context.getContentResolver().query(Uri.parse("content://sms/" + msgHandle), null, null, null, null);
-        if ( cr.moveToFirst()){
-            int threadId = cr.getInt(cr.getColumnIndex(("thread_id")));
-            if ( threadId != DELETED_THREAD_ID){
-                // Move to deleted folder
-                updateSMSThreadId(msgHandle, Integer.valueOf(DELETED_THREAD_ID));
-            } else {
-                // Delete the message permanently
-                mnsClient.addMceInitiatedOperation(msgHandle);
-                context.getContentResolver().delete(Uri.parse("content://sms/" + msgHandle), null, null);
+        if (cr != null) {
+            if (cr.moveToFirst()) {
+                int threadId = cr.getInt(cr.getColumnIndex(("thread_id")));
+                if ( threadId != DELETED_THREAD_ID){
+                    // Move to deleted folder
+                    updateSMSThreadId(msgHandle, Integer.valueOf(DELETED_THREAD_ID));
+                } else {
+                    // Delete the message permanently
+                    mnsClient.addMceInitiatedOperation(msgHandle);
+                    context.getContentResolver().delete(Uri.parse("content://sms/" + msgHandle), null, null);
+                }
             }
             cr.close();
         }
@@ -2112,12 +2112,13 @@ public class BluetoothMasAppIf {
 
         Cursor cr = context.getContentResolver().query(Uri.parse("content://sms/" + msgHandle), null, null, null, null );
 
-        if (cr.moveToFirst()){
+        if (cr != null && cr.moveToFirst()){
 
             // Make sure that the message is in delete folder
             String currentThreadId = cr.getString(cr.getColumnIndex("thread_id"));
             if ( currentThreadId != null && Integer.valueOf(currentThreadId) != -1){
                 Log.d(TAG, " Not in delete folder");
+                cr.close();
                 return;
             }
 
@@ -2127,42 +2128,49 @@ public class BluetoothMasAppIf {
             // Search the database for the given address
             Cursor crThreadId = context.getContentResolver().query(Uri.parse("content://sms/"),
                     null, "address = " + address + " AND thread_id != -1", null, null);
-            if (crThreadId.moveToFirst()){
-                // A thread for the given address exists in the database
-                String threadIdStr = crThreadId.getString(crThreadId.getColumnIndex("thread_id"));
-                Log.d(TAG, " THREAD ID " + threadIdStr);
-                updateSMSThreadId(msgHandle, Integer.valueOf(threadIdStr));
-            }
-            else
-            {
-                /* No thread for the given address
-                 * Create a fake message to obtain the thread, use that thread_id
-                 * and then delete the fake message
-                 */
-                ContentValues tempValue = new ContentValues();
-                tempValue.put("address", address);
-                tempValue.put("type", "20");
-                Uri tempUri = context.getContentResolver().insert( Uri.parse("content://sms/"), tempValue);
-
-                if ( tempUri != null ) {
-                    String tempMsgId = tempUri.getLastPathSegment();
-                    Cursor tempCr = context.getContentResolver().query(tempUri, null, null, null, null);
-                    tempCr.moveToFirst();
-                    String newThreadIdStr = tempCr.getString(tempCr.getColumnIndex("thread_id"));
-                    tempCr.close();
-
-                    updateSMSThreadId(msgHandle, Integer.valueOf(newThreadIdStr));
-
-                    context.getContentResolver().delete(tempUri, null, null);
+            if (crThreadId != null) {
+                if (crThreadId.moveToFirst()){
+                    // A thread for the given address exists in the database
+                    String threadIdStr = crThreadId.getString(crThreadId.getColumnIndex("thread_id"));
+                    Log.d(TAG, " THREAD ID " + threadIdStr);
+                    updateSMSThreadId(msgHandle, Integer.valueOf(threadIdStr));
                 }
+                else
+                {
+                    /* No thread for the given address
+                     * Create a fake message to obtain the thread, use that thread_id
+                     * and then delete the fake message
+                     */
+                    ContentValues tempValue = new ContentValues();
+                    tempValue.put("address", address);
+                    tempValue.put("type", "20");
+                    Uri tempUri = context.getContentResolver().insert( Uri.parse("content://sms/"), tempValue);
+
+                    if ( tempUri != null ) {
+                        String tempMsgId = tempUri.getLastPathSegment();
+                        Cursor tempCr = context.getContentResolver().query(tempUri, null, null, null, null);
+                        if (tempCr != null) {
+                            if (tempCr.moveToFirst()) {
+                                String newThreadIdStr = tempCr.getString(tempCr.getColumnIndex("thread_id"));
+                                updateSMSThreadId(msgHandle, Integer.valueOf(newThreadIdStr));
+                            }
+                            tempCr.close();
+                        }
+
+
+                        context.getContentResolver().delete(tempUri, null, null);
+                    }
+                }
+                crThreadId.close();
             }
-            crThreadId.close();
         }
         else
         {
             Log.d(TAG, "msgHandle not found");
         }
-        cr.close();
+        if (cr != null) {
+            cr.close();
+        }
     }
 
 
@@ -2188,7 +2196,13 @@ public class BluetoothMasAppIf {
 
         Cursor cr = context.getContentResolver().query(uri, null, null, null,
                 null);
-        if (cr.moveToFirst()) {
+        boolean hasEntry = cr != null && cr.moveToFirst();
+
+        if (cr != null) {
+            cr.close();
+        }
+
+        if (hasEntry) {
             if (bluetoothMasAppParams.StatusIndicator == 0) {
                 /* Read Status */
                 ContentValues values = new ContentValues();
@@ -2204,14 +2218,20 @@ public class BluetoothMasAppIf {
             return ResponseCodes.OBEX_HTTP_OK;
         }
         // MMS MessageStatus processing begins here
-        cr.close();
         String whereClause = " _id= " + getMmsMsgHndToID(Integer.valueOf(name));
         uri = Uri.parse("content://mms/");
         if(getMmsMsgHndToID(Integer.valueOf(name)) > 0){
             cr = context.getContentResolver().query(uri, null, null, null, null);
+        } else {
+            cr = null;
         }
-        if (cr.getCount() > 0) {
-            cr.moveToFirst();
+
+        hasEntry = cr != null && cr.moveToFirst();
+        if (cr != null) {
+            cr.close();
+        }
+
+        if (hasEntry) {
             if (bluetoothMasAppParams.StatusIndicator == 0) {
                 /* Read Status */
                 ContentValues values = new ContentValues();
@@ -2230,7 +2250,6 @@ public class BluetoothMasAppIf {
                 return ResponseCodes.OBEX_HTTP_OK;
             }
         }
-        cr.close();
 
         //Email
         //Query the mailbox table to get the id values for Inbox and Trash folder
@@ -2242,9 +2261,10 @@ public class BluetoothMasAppIf {
         int deletedFolderId = 0;
         int msgFolderId = 0;
         String folderName;
-        if (cr1.getCount() > 0) {
+
+        if (cr1 != null) {
             cr1.moveToFirst();
-            do {
+            while (!cr1.isAfterLast()) {
                 folderName = cr1.getString(cr1.getColumnIndex("displayName"));
                 if(folderName.equalsIgnoreCase("INBOX")){
                     inboxFolderId = cr1.getInt(cr1.getColumnIndex("_id"));
@@ -2252,7 +2272,9 @@ public class BluetoothMasAppIf {
                 else{
                     deletedFolderId = cr1.getInt(cr1.getColumnIndex("_id"));
                 }
-            } while ( cr1.moveToNext());
+                cr1.moveToNext();
+            }
+            cr1.close();
         }
 
 
@@ -2264,8 +2286,15 @@ public class BluetoothMasAppIf {
         Uri uri2 = Uri.parse("content://com.android.email.provider/message/"+emailMsgId);
         cr = context.getContentResolver().query(uri2, null, null, null,
                 null);
-        if (cr.moveToFirst()) {
+        hasEntry = cr != null && cr.moveToFirst();
+        if (hasEntry) {
+            msgFolderId = cr.getInt(cr.getColumnIndex("mailboxKey"));
+        }
+        if (cr != null) {
+            cr.close();
+        }
 
+        if (hasEntry) {
             if (bluetoothMasAppParams.StatusIndicator == 0) {
                 /* Read Status */
                 ContentValues values = new ContentValues();
@@ -2274,7 +2303,6 @@ public class BluetoothMasAppIf {
             }
             else {
                 if (bluetoothMasAppParams.StatusValue == 1) { //if the email is deleted
-                    msgFolderId = cr.getInt(cr.getColumnIndex("mailboxKey"));
                     if(msgFolderId == deletedFolderId){
                         //TODO need to add notification for deleted email here
                         mnsClient.addMceInitiatedOperation(name);
@@ -2322,7 +2350,12 @@ public class BluetoothMasAppIf {
 
         Cursor cr = context.getContentResolver().query(uri, null, null, null,
                 null);
-        if (cr.moveToFirst()) {
+        boolean hasEntry = cr != null && cr.moveToFirst();
+        if (cr != null) {
+            cr.close();
+        }
+
+        if (hasEntry) {
             if (bluetoothMasAppParams.StatusIndicator == 0) {
                 /* Read Status */
                 ContentValues values = new ContentValues();
@@ -2338,14 +2371,19 @@ public class BluetoothMasAppIf {
             return ResponseCodes.OBEX_HTTP_OK;
         }
         // MMS MessageStatus processing begins here
-        cr.close();
         String whereClause = " _id= " + getMmsMsgHndToID(Integer.valueOf(name));
         uri = Uri.parse("content://mms/");
         if(getMmsMsgHndToID(Integer.valueOf(name)) > 0){
             cr = context.getContentResolver().query(uri, null, null, null, null);
+        } else {
+            cr = null;
         }
-        if (cr.getCount() > 0) {
-            cr.moveToFirst();
+        hasEntry = cr != null && cr.moveToFirst();
+        if (cr != null) {
+            cr.close();
+        }
+
+        if (hasEntry) {
             if (bluetoothMasAppParams.StatusIndicator == 0) {
                 /* Read Status */
                 ContentValues values = new ContentValues();
@@ -2364,7 +2402,6 @@ public class BluetoothMasAppIf {
                 return ResponseCodes.OBEX_HTTP_OK;
             }
         }
-        cr.close();
 
         //Email
         //Query the mailbox table to get the id values for Inbox and Trash folder
@@ -2376,9 +2413,9 @@ public class BluetoothMasAppIf {
         int deletedFolderId = 0;
         int msgFolderId = 0;
         String folderName;
-        if (cr1.getCount() > 0) {
+        if (cr1 != null) {
             cr1.moveToFirst();
-            do {
+            while (!cr1.isAfterLast()) {
                 folderName = cr1.getString(cr1.getColumnIndex("displayName"));
                 if(folderName.equalsIgnoreCase("INBOX")){
                     inboxFolderId = cr1.getInt(cr1.getColumnIndex("_id"));
@@ -2386,7 +2423,9 @@ public class BluetoothMasAppIf {
                 else{
                     deletedFolderId = cr1.getInt(cr1.getColumnIndex("_id"));
                 }
-            } while ( cr1.moveToNext());
+                cr1.moveToNext();
+            }
+            cr1.close();
         }
 
 
@@ -2398,8 +2437,15 @@ public class BluetoothMasAppIf {
         Uri uri2 = Uri.parse("content://com.android.email.provider/message/"+emailMsgId);
         cr = context.getContentResolver().query(uri2, null, null, null,
                 null);
-        if (cr.moveToFirst()) {
+        hasEntry = cr != null && cr.moveToFirst();
+        if (hasEntry) {
+            msgFolderId = cr.getInt(cr.getColumnIndex("mailboxKey"));
+        }
+        if (cr != null) {
+            cr.close();
+        }
 
+        if (hasEntry) {
             if (bluetoothMasAppParams.StatusIndicator == 0) {
                 /* Read Status */
                 ContentValues values = new ContentValues();
@@ -2408,7 +2454,6 @@ public class BluetoothMasAppIf {
             }
             else {
                 if (bluetoothMasAppParams.StatusValue == 1) { //if the email is deleted
-                    msgFolderId = cr.getInt(cr.getColumnIndex("mailboxKey"));
                     if(msgFolderId == deletedFolderId){
                         //TODO need to add notification for deleted email here
                         mnsClient.addMceInitiatedOperation(name);
@@ -2536,12 +2581,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/part");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int handleInd = cursor.getColumnIndex("_id");
-            handle = cursor.getInt(handleInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int handleInd = cursor.getColumnIndex("_id");
+                handle = cursor.getInt(handleInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return handle;
     }
 
@@ -2555,12 +2601,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/part");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int handleInd = cursor.getColumnIndex("mid");
-            msgID = cursor.getInt(handleInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int handleInd = cursor.getColumnIndex("mid");
+                msgID = cursor.getInt(handleInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return msgID;
     }
 
@@ -2573,15 +2620,16 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms");
         ContentResolver cr = context.getContentResolver();
         Cursor crID = cr.query(uri, null, whereClause, null, null);
-        int idInd = crID.getColumnIndex("_id");
-        if (crID.getCount() != 0) {
+        if (crID != null) {
+            int idInd = crID.getColumnIndex("_id");
             crID.moveToFirst();
-            do {
+            while (!crID.isAfterLast()) {
                 idList.add(Integer.valueOf(crID.getInt(idInd)));
-            } while (crID.moveToNext());
+                crID.moveToNext();
+            }
+            crID.close();
         }
 
-        crID.close();
         return idList;
     }
 
@@ -2662,12 +2710,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int msgBoxInd = cursor.getColumnIndex("msg_box");
-            val = cursor.getInt(msgBoxInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int msgBoxInd = cursor.getColumnIndex("msg_box");
+                val = cursor.getInt(msgBoxInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return val;
     }
 
@@ -2681,12 +2730,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/part");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int textInd = cursor.getColumnIndex("text");
-            text = cursor.getString(textInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int textInd = cursor.getColumnIndex("text");
+                text = cursor.getString(textInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return text;
     }
 
@@ -2700,12 +2750,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int subjectInd = cursor.getColumnIndex("sub");
-            text = cursor.getString(subjectInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int subjectInd = cursor.getColumnIndex("sub");
+                text = cursor.getString(subjectInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return text;
     }
 
@@ -2719,12 +2770,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int dateInd = cursor.getColumnIndex("date");
-            text = cursor.getString(dateInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int dateInd = cursor.getColumnIndex("date");
+                text = cursor.getString(dateInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return text;
 
     }
@@ -2739,12 +2791,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int sizeInd = cursor.getColumnIndex("m_size");
-            attachSize = cursor.getInt(sizeInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int sizeInd = cursor.getColumnIndex("m_size");
+                attachSize = cursor.getInt(sizeInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return attachSize;
 
     }
@@ -2759,16 +2812,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int readInd = cursor.getColumnIndex("read");
-            if (cursor.getInt(readInd) == 0) {
-                text = "no";
-            } else {
-                text = "yes";
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int readInd = cursor.getColumnIndex("read");
+                text = cursor.getInt(readInd) == 0 ? "no" : "yes";
             }
+            cursor.close();
         }
-        cursor.close();
         return text;
 
     }
@@ -2802,30 +2852,15 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int priInd = cursor.getColumnIndex("pri");
-
-            switch (cursor.getInt(priInd)) {
-            case PRIORITY_LOW:
-                text = "no";
-                break;
-            case PRIORITY_NORMAL:
-                text = "no";
-                break;
-            case PRIORITY_HIGH:
-                text = "yes";
-                break;
-
-            default:
-                text = "no";
-                break;
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int priInd = cursor.getColumnIndex("pri");
+                text = cursor.getInt(priInd) == PRIORITY_HIGH ? "yes" : "no";
             }
+            cursor.close();
         }
 
-        cursor.close();
         return text;
-
     }
 
     /**
@@ -2838,16 +2873,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int readInd = cursor.getColumnIndex("locked");
-            if (cursor.getInt(readInd) == 0) {
-                text = "no";
-            } else {
-                text = "yes";
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int readInd = cursor.getColumnIndex("locked");
+                text = cursor.getInt(readInd) == 0 ? "no" : "yes";
             }
+            cursor.close();
         }
-        cursor.close();
         return text;
 
     }
@@ -2862,12 +2894,13 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/" + msgID + "/addr");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int addressInd = cursor.getColumnIndex("address");
-            text = cursor.getString(addressInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int addressInd = cursor.getColumnIndex("address");
+                text = cursor.getString(addressInd);
+            }
+            cursor.close();
         }
-        cursor.close();
         return text;
     }
 
@@ -2880,18 +2913,19 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/");
         ContentResolver cr = context.getContentResolver();
         Cursor cursor = cr.query(uri, null, whereClause, null, null);
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            int msgboxInd = cursor.getColumnIndex("msg_box");
-            String thread_id = cursor.getString(cursor.getColumnIndex("thread_id"));
-            if ( Integer.valueOf(thread_id) == DELETED_THREAD_ID) {
-                // Deleted folder
-                folderNum = 0;
-            } else {
-                folderNum = cursor.getInt(msgboxInd);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int msgboxInd = cursor.getColumnIndex("msg_box");
+                String thread_id = cursor.getString(cursor.getColumnIndex("thread_id"));
+                if ( Integer.valueOf(thread_id) == DELETED_THREAD_ID) {
+                    // Deleted folder
+                    folderNum = 0;
+                } else {
+                    folderNum = cursor.getInt(msgboxInd);
+                }
             }
+            cursor.close();
         }
-        cursor.close();
         return folderNum;
     }
 
@@ -2940,8 +2974,7 @@ public class BluetoothMasAppIf {
         cr = context.getContentResolver().query(uri, null, whereClause, null,
                 null);
 
-        if (cr.getCount() > 0) {
-            cr.moveToFirst();
+        if (cr != null && cr.moveToFirst()) {
             String containingFolder = getMmsMapVirtualFolderName((getMmsContainingFolder(msgID)));
             BmessageConsts bmsg = new BmessageConsts();
 
@@ -3021,6 +3054,9 @@ public class BluetoothMasAppIf {
                 }
 
             }
+        }
+        if (cr != null) {
+            cr.close();
         }
         return bMessage;
     }
@@ -3202,21 +3238,25 @@ public class BluetoothMasAppIf {
         Uri uri = Uri.parse("content://mms/drafts");
         ContentResolver cr = context.getContentResolver();
         Cursor crID = cr.query(uri, null, null, null, null);
-        if (crID.getCount() > 0) {
-            crID.moveToFirst();
-            int msgIDInd = crID.getColumnIndex("_id");
-            handle = crID.getString(msgIDInd);
+        if (crID != null) {
+            if (crID.moveToFirst()) {
+                int msgIDInd = crID.getColumnIndex("_id");
+                handle = crID.getString(msgIDInd);
+            }
+            crID.close();
         }
 
         if (handle != null) {
             String whereClause = " _id= " + handle;
             uri = Uri.parse("content://mms");
             crID = cr.query(uri, null, whereClause, null, null);
-            if (crID.getCount() > 0) {
-                crID.moveToFirst();
-                ContentValues values = new ContentValues();
-                values.put("msg_box", 4);
-                cr.update(uri, values, whereClause, null);
+            if (crID != null) {
+                if (crID.moveToFirst()) {
+                    ContentValues values = new ContentValues();
+                    values.put("msg_box", 4);
+                    cr.update(uri, values, whereClause, null);
+                }
+                crID.close();
             }
         }
     }
@@ -3381,11 +3421,12 @@ public class BluetoothMasAppIf {
         if (tempUri != null) {
             Cursor tempCr = context.getContentResolver().query(tempUri, null,
                     null, null, null);
-            tempCr.moveToFirst();
-            String newThreadIdStr = tempCr.getString(tempCr
-                    .getColumnIndex("thread_id"));
-            tempCr.close();
-            returnValue = Integer.valueOf(newThreadIdStr);
+            if (tempCr != null) {
+                if (tempCr.moveToFirst()) {
+                    returnValue = tempCr.getInt(tempCr.getColumnIndex("thread_id"));
+                }
+                tempCr.close();
+            }
 
             context.getContentResolver().delete(tempUri, null, null);
         }

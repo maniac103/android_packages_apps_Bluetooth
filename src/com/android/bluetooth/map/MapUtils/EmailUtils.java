@@ -80,25 +80,28 @@ public class EmailUtils {
         Uri uri = Uri.parse("content://com.android.email.provider/mailbox");
         Cursor cr = context.getContentResolver().query(uri, projection, null, null, null);
 
-        if ( cr.moveToFirst()) {
-                do {
+        if (cr != null) {
+                cr.moveToFirst();
+                while (!cr.isAfterLast()) {
                         Log.d(TAG, " Column Name: "+ cr.getColumnName(0) + " Value: " + cr.getString(0));
                         int folderFlag = 0;
                         for(int i=0; i< folderList.size(); i++){
-                        if(folderList.get(i).equalsIgnoreCase(cr.getString(0))){
-                            folderFlag = 1;
-                            break;
+                                if(folderList.get(i).equalsIgnoreCase(cr.getString(0))){
+                                        folderFlag = 1;
+                                        break;
+                                }
                         }
-                }
                         if(cr.getString(0).equalsIgnoreCase("Drafts")){ //TODO need to remove this hardcoded value
                                 folderFlag = 1;
                         }
                         if(folderFlag == 0){
                                 folderList.add(cr.getString(0));
                         }
-
-            } while ( cr.moveToNext());
+                        cr.moveToNext();
+                }
+                cr.close();
         }
+
         Log.d(TAG, " Folder Listing of SMS,MMS and EMAIL: "+folderList);
 
         return folderList;
@@ -115,14 +118,14 @@ public class EmailUtils {
         Cursor cr = context.getContentResolver().query(
                                 uri, null, "(UPPER(displayName) = '"+ folder.toUpperCase()+"')" , null, null);
 
-                if ( cr.moveToFirst()) {
-                        do {
-                                Log.d(TAG, ":: Inside getWhereIsQueryForTypeEmail Folder Name ::"+ cr.getString(cr.getColumnIndex("displayName")));
+        if (cr != null) {
+                if (cr.moveToFirst()) {
+                        Log.d(TAG, ":: Inside getWhereIsQueryForTypeEmail Folder Name ::"+ cr.getString(cr.getColumnIndex("displayName")));
                         folderId = cr.getString(cr.getColumnIndex("_id"));
                         query = "mailboxKey = "+ folderId;
-                        break;
-                        } while ( cr.moveToNext());
                 }
+                cr.close();
+        }
 
         return query;
     }
@@ -134,16 +137,16 @@ public class EmailUtils {
         String textContent;
         Uri uri = Uri.parse("content://com.android.email.provider/body");
 
-                Cursor cr = context.getContentResolver().query(
-                                uri, null, "messageKey = "+ messageId , null, null);
+        Cursor cr = context.getContentResolver().query(
+                        uri, null, "messageKey = "+ messageId , null, null);
 
+        if (cr != null) {
                 if ( cr.moveToFirst()) {
-                        do {
                         textContent = cr.getString(cr.getColumnIndex("textContent"));
                         msgSize = textContent.length();
-                        break;
-                        } while ( cr.moveToNext());
                 }
+                cr.close();
+        }
 
         return msgSize;
     }
@@ -425,115 +428,119 @@ public class EmailUtils {
         cr1 = context.getContentResolver().query(uri1, null, whereClause, null,
                 null);
 
-        if (cr1.getCount() > 0) {
-            cr1.moveToFirst();
-            folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
-            String containingFolder = getContainingFolderEmail(folderId, context);
-            timeStamp = cr1.getString(cr1.getColumnIndex("timeStamp"));
-            subjectText = cr1.getString(cr1.getColumnIndex("subject"));
-            BmessageConsts bmsg = new BmessageConsts();
+        if (cr1 != null) {
+            if (cr1.moveToFirst()) {
+                folderId = cr1.getInt(cr1.getColumnIndex("mailboxKey"));
+                String containingFolder = getContainingFolderEmail(folderId, context);
+                timeStamp = cr1.getString(cr1.getColumnIndex("timeStamp"));
+                subjectText = cr1.getString(cr1.getColumnIndex("subject"));
+                BmessageConsts bmsg = new BmessageConsts();
 
-            // Create a bMessage
+                // Create a bMessage
 
-            // TODO Get Current type
-            bmsg.setType("EMAIL");
+                // TODO Get Current type
+                bmsg.setType("EMAIL");
 
-            bmsg.setBmsg_version("1.0");
-            if (cr1.getString(cr1.getColumnIndex("flagRead")).equalsIgnoreCase("1")) {
-                bmsg.setStatus("READ");
-            } else {
-                bmsg.setStatus("UNREAD");
-            }
-
-            bmsg.setFolder("TELECOM/MSG/" + containingFolder);
-
-            bmsg.setVcard_version("2.1");
-
-            String senderName = null;
-            senderName = cr1.getString(cr1.getColumnIndex("fromList"));
-            if(senderName.contains("")){
-                String[] senderStr = senderName.split("");
-                if(senderStr !=null && senderStr.length > 0){
-                        bmsg.setOriginatorVcard_name(senderStr[1].trim());
-                        bmsg.setOriginatorVcard_email(senderStr[0].trim());
+                bmsg.setBmsg_version("1.0");
+                if (cr1.getString(cr1.getColumnIndex("flagRead")).equalsIgnoreCase("1")) {
+                    bmsg.setStatus("READ");
+                } else {
+                    bmsg.setStatus("UNREAD");
                 }
-            }
-            else{
-                bmsg.setOriginatorVcard_name(senderName.trim());
-                bmsg.setOriginatorVcard_email(senderName.trim());
-            }
 
-            String recipientName = null;
-            String multiRecepients = null;
-            recipientName = cr1.getString(cr1.getColumnIndex("toList"));
-            if(recipientName.contains("")){
-                String[] recepientStr = recipientName.split("");
-                if(recepientStr !=null && recepientStr.length > 0){
-                        bmsg.setRecipientVcard_name(recepientStr[1].trim());
-                    bmsg.setRecipientVcard_email(recepientStr[0].trim());
+                bmsg.setFolder("TELECOM/MSG/" + containingFolder);
+
+                bmsg.setVcard_version("2.1");
+
+                String senderName = null;
+                senderName = cr1.getString(cr1.getColumnIndex("fromList"));
+                if(senderName.contains("")){
+                    String[] senderStr = senderName.split("");
+                    if(senderStr !=null && senderStr.length > 0){
+                            bmsg.setOriginatorVcard_name(senderStr[1].trim());
+                            bmsg.setOriginatorVcard_email(senderStr[0].trim());
+                    }
                 }
+                else{
+                    bmsg.setOriginatorVcard_name(senderName.trim());
+                    bmsg.setOriginatorVcard_email(senderName.trim());
+                }
+
+                String recipientName = null;
+                String multiRecepients = null;
+                recipientName = cr1.getString(cr1.getColumnIndex("toList"));
+                if(recipientName.contains("")){
+                    String[] recepientStr = recipientName.split("");
+                    if(recepientStr !=null && recepientStr.length > 0){
+                            bmsg.setRecipientVcard_name(recepientStr[1].trim());
+                        bmsg.setRecipientVcard_email(recepientStr[0].trim());
+                    }
+                }
+                else if(recipientName.contains("")){
+                    multiRecepients = recipientName.replace('', ';');
+                    Log.d(TAG, " ::Recepient name :: " + multiRecepients);
+                    bmsg.setRecipientVcard_name(multiRecepients.trim());
+                    bmsg.setRecipientVcard_email(multiRecepients.trim());
+                }
+                else{
+                    bmsg.setRecipientVcard_name(recipientName.trim());
+                    bmsg.setRecipientVcard_email(recipientName.trim());
+                }
+
+
+                // TODO Set either Encoding or Native
+
+                // TODO how to get body for MMS? This is for SMS only
+
+                StringBuilder sb = new StringBuilder();
+                Date date = new Date(Long.parseLong(timeStamp));
+                sb.append("Date: ").append(date.toString()).append("\r\n");
+                sb.append("To:").append(bmsg.getRecipientVcard_email()).append("\r\n");
+                sb.append("From:").append(bmsg.getOriginatorVcard_email()).append("\r\n");
+                sb.append("Subject:").append(subjectText).append("\r\n");
+
+                sb.append("Mime-Version: 1.0").append("\r\n");
+                sb.append(
+                        "Content-Type: multipart/mixed; boundary=\"RPI-Messaging.123456789.0\"")
+                        .append("\r\n");
+                sb.append("Content-Transfer-Encoding: 7bit").append("\r\n")
+                        .append("\r\n");
+                sb.append("MIME Message").append("\r\n");
+                sb.append("--RPI-Messaging.123456789.0").append("\r\n");
+                sb.append("Content-Type: text/plain; charset=\"UTF-8\"").append("\r\n");
+                sb.append("Content-Transfer-Encoding: 8bit").append("\r\n");
+                sb.append("Content-Disposition:inline").append("\r\n")
+                        .append("\r\n");
+
+                //Query the body table for obtaining the message body
+                Cursor cr2 = null;
+                String emailBody = null;
+                Uri uri2 = Uri.parse("content://com.android.email.provider/body");
+                String whereStr = " messageKey = " + msgHandle;
+                cr2 = context.getContentResolver().query(uri2, null, whereStr, null,
+                        null);
+
+                if (cr2 != null) {
+                    if (cr2.moveToFirst()) {
+                        emailBody = cr2.getString(cr2.getColumnIndex("textContent"));
+                    }
+                    cr2.close();
+                }
+                sb.append(emailBody).append("\r\n");
+
+                sb.append("--RPI-Messaging.123456789.0--").append("\r\n");
+                bmsg.setBody_msg(sb.toString());
+                bmsg.setBody_length(sb.length() + 22);
+                Log.d(TAG, "bMessageEmail test 44444444\n");
+                // Send a bMessage
+                Log.d(TAG, "bMessageEmail test\n");
+                Log.d(TAG, "=======================\n\n");
+                str = mu.toBmessageEmail(bmsg);
+                Log.d(TAG, str);
+                Log.d(TAG, "\n\n");
             }
-            else if(recipientName.contains("")){
-                multiRecepients = recipientName.replace('', ';');
-                Log.d(TAG, " ::Recepient name :: " + multiRecepients);
-                bmsg.setRecipientVcard_name(multiRecepients.trim());
-                bmsg.setRecipientVcard_email(multiRecepients.trim());
-            }
-            else{
-                bmsg.setRecipientVcard_name(recipientName.trim());
-                bmsg.setRecipientVcard_email(recipientName.trim());
-            }
-
-
-            // TODO Set either Encoding or Native
-
-            // TODO how to get body for MMS? This is for SMS only
-
-            StringBuilder sb = new StringBuilder();
-            Date date = new Date(Long.parseLong(timeStamp));
-            sb.append("Date: ").append(date.toString()).append("\r\n");
-            sb.append("To:").append(bmsg.getRecipientVcard_email()).append("\r\n");
-            sb.append("From:").append(bmsg.getOriginatorVcard_email()).append("\r\n");
-            sb.append("Subject:").append(subjectText).append("\r\n");
-
-            sb.append("Mime-Version: 1.0").append("\r\n");
-            sb.append(
-                    "Content-Type: multipart/mixed; boundary=\"RPI-Messaging.123456789.0\"")
-                    .append("\r\n");
-            sb.append("Content-Transfer-Encoding: 7bit").append("\r\n")
-                    .append("\r\n");
-            sb.append("MIME Message").append("\r\n");
-            sb.append("--RPI-Messaging.123456789.0").append("\r\n");
-            sb.append("Content-Type: text/plain; charset=\"UTF-8\"").append("\r\n");
-            sb.append("Content-Transfer-Encoding: 8bit").append("\r\n");
-            sb.append("Content-Disposition:inline").append("\r\n")
-                    .append("\r\n");
-
-            //Query the body table for obtaining the message body
-            Cursor cr2 = null;
-            String emailBody = null;
-            Uri uri2 = Uri.parse("content://com.android.email.provider/body");
-            String whereStr = " messageKey = " + msgHandle;
-            cr2 = context.getContentResolver().query(uri2, null, whereStr, null,
-                    null);
-
-            if (cr2.getCount() > 0) {
-                cr2.moveToFirst();
-                emailBody = cr2.getString(cr2.getColumnIndex("textContent"));
-            }
-            sb.append(emailBody).append("\r\n");
-
-            sb.append("--RPI-Messaging.123456789.0--").append("\r\n");
-            bmsg.setBody_msg(sb.toString());
-            bmsg.setBody_length(sb.length() + 22);
-            Log.d(TAG, "bMessageEmail test 44444444\n");
-            // Send a bMessage
-            Log.d(TAG, "bMessageEmail test\n");
-            Log.d(TAG, "=======================\n\n");
-            str = mu.toBmessageEmail(bmsg);
-            Log.d(TAG, str);
-            Log.d(TAG, "\n\n");
-     }
+            cr1.close();
+        }
 
         return str;
     }
@@ -549,12 +556,13 @@ public class EmailUtils {
         cr = context.getContentResolver().query(
                 Uri.parse("content://com.android.email.provider/mailbox"),
                 null, whereClause, null, null);
-        if (cr.getCount() > 0) {
-            cr.moveToFirst();
-            folderName = cr.getString(cr.getColumnIndex("displayName"));
-            return folderName;
+        if (cr != null) {
+            if (cr.moveToFirst()) {
+                folderName = cr.getString(cr.getColumnIndex("displayName"));
+            }
+            cr.close();
         }
-        return null;
+        return folderName;
     }
 
 
